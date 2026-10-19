@@ -1,12 +1,12 @@
 package wailacompact.waila;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 
 import cpw.mods.fml.common.Loader;
 import wailacompact.WailaCompact;
@@ -20,6 +20,7 @@ public class ToolIcons {
     // Tool class -> GregTech MetaGeneratedTool01 tool id (see gregtech.common.items.IDMetaTool01)
     private static final Map<String, Integer> GREGTECH = new HashMap<>();
     private static final Map<String, ItemStack> CACHE = new HashMap<>();
+    private static boolean gtProxyFailed = false;
 
     static {
         VANILLA.put("pickaxe", new ItemStack(Items.iron_pickaxe));
@@ -60,13 +61,55 @@ public class ToolIcons {
     }
 
     /**
-     * GregTech draws the durability bar as part of the tool icon, render the icon tools with 0 durability left.
+     * GregTech draws the durability and charge bars as part of the tool icon. Turns them off (GTMod.proxy
+     * mRenderItemDurabilityBar / mRenderItemChargeBar) while an icon is rendered.
+     *
+     * @return the previous values to pass to {@link #restoreGTBars}, or null if there was nothing to change
      */
-    private static void setZeroDurability(ItemStack stack) {
-        if (!stack.hasTagCompound()) return;
-        NBTTagCompound stats = stack.getTagCompound()
-            .getCompoundTag("GT.ToolStats");
-        stats.setLong("Damage", stats.getLong("MaxDamage"));
+    public static boolean[] hideGTBars() {
+        Object proxy = getGTProxy();
+        if (proxy == null) return null;
+        try {
+            Field durability = proxy.getClass()
+                .getField("mRenderItemDurabilityBar");
+            Field charge = proxy.getClass()
+                .getField("mRenderItemChargeBar");
+            boolean[] previous = { durability.getBoolean(proxy), charge.getBoolean(proxy) };
+            durability.setBoolean(proxy, false);
+            charge.setBoolean(proxy, false);
+            return previous;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            gtProxyFailed = true;
+            return null;
+        }
+    }
+
+    public static void restoreGTBars(boolean[] previous) {
+        if (previous == null) return;
+        Object proxy = getGTProxy();
+        if (proxy == null) return;
+        try {
+            proxy.getClass()
+                .getField("mRenderItemDurabilityBar")
+                .setBoolean(proxy, previous[0]);
+            proxy.getClass()
+                .getField("mRenderItemChargeBar")
+                .setBoolean(proxy, previous[1]);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            gtProxyFailed = true;
+        }
+    }
+
+    private static Object getGTProxy() {
+        if (gtProxyFailed || !Loader.isModLoaded("gregtech")) return null;
+        try {
+            return Class.forName("gregtech.GTMod")
+                .getField("proxy")
+                .get(null);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            gtProxyFailed = true;
+            return null;
+        }
     }
 
     private static ItemStack createGTTool(int toolId) {
@@ -81,9 +124,7 @@ public class ToolIcons {
                 .get(null);
             Method getToolWithStats = toolClass
                 .getMethod("getToolWithStats", int.class, int.class, materialsClass, materialsClass, long[].class);
-            ItemStack stack = (ItemStack) getToolWithStats.invoke(instance, toolId, 1, steel, steel, null);
-            if (stack != null) setZeroDurability(stack);
-            return stack;
+            return (ItemStack) getToolWithStats.invoke(instance, toolId, 1, steel, steel, null);
         } catch (ReflectiveOperationException | RuntimeException e) {
             WailaCompact.LOG.warn("Could not create the GregTech tool icon with id " + toolId, e);
             return null;

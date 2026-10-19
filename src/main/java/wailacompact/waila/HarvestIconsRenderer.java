@@ -71,9 +71,12 @@ public class HarvestIconsRenderer implements IWailaVariableWidthTooltipRenderer 
             GL11.glEnable(GL12.GL_RESCALE_NORMAL);
             GL11.glEnable(GL11.GL_LIGHTING);
             GL11.glEnable(GL11.GL_DEPTH_TEST);
+            boolean[] gtBars = ToolIcons.hideGTBars();
             try {
                 renderItem.renderItemAndEffectIntoGUI(font, mc.getTextureManager(), icon, 0, 0);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {} finally {
+                ToolIcons.restoreGTBars(gtBars);
+            }
             GL11.glDisable(GL11.GL_DEPTH_TEST);
             GL11.glDisable(GL11.GL_LIGHTING);
             GL11.glDisable(GL12.GL_RESCALE_NORMAL);
