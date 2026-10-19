@@ -1,15 +1,14 @@
 package wailacompact.mixins;
 
+import javax.annotation.Nonnull;
+
 import com.gtnewhorizon.gtnhmixins.builders.IMixins;
 import com.gtnewhorizon.gtnhmixins.builders.MixinBuilder;
-
-import javax.annotation.Nonnull;
 
 public enum Mixins implements IMixins {
 
     // Hides the text lines added by WailaHarvestability, they are replaced by the harvest icons
-    HIDE_HARVESTABILITY_TEXT(new MixinBuilder()
-        .setPhase(Phase.LATE)
+    HIDE_HARVESTABILITY_TEXT(new MixinBuilder().setPhase(Phase.LATE)
         .addRequiredMod(TargetMods.WAILA_HARVESTABILITY)
         .addClientMixins("MixinWailaHandler_HideText"));
 

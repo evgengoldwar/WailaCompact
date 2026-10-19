@@ -84,7 +84,9 @@ public class HarvestIconsRenderer implements IWailaVariableWidthTooltipRenderer 
             GL11.glPopMatrix();
         } else {
             // Unknown tool class without an icon, show its first letter instead
-            String letter = toolClass.isEmpty() ? "?" : toolClass.substring(0, 1).toUpperCase();
+            String letter = toolClass.isEmpty() ? "?"
+                : toolClass.substring(0, 1)
+                    .toUpperCase();
             font.drawStringWithShadow(letter, x + (ICON_SIZE - font.getStringWidth(letter)) / 2, 0, 0xFFFFFF);
         }
 
