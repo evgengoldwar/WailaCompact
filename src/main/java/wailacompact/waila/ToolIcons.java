@@ -6,6 +6,7 @@ import java.util.Map;
 
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 
 import cpw.mods.fml.common.Loader;
 import wailacompact.WailaCompact;
@@ -58,6 +59,16 @@ public class ToolIcons {
         return stack;
     }
 
+    /**
+     * GregTech draws the durability bar as part of the tool icon, render the icon tools with 0 durability left.
+     */
+    private static void setZeroDurability(ItemStack stack) {
+        if (!stack.hasTagCompound()) return;
+        NBTTagCompound stats = stack.getTagCompound()
+            .getCompoundTag("GT.ToolStats");
+        stats.setLong("Damage", stats.getLong("MaxDamage"));
+    }
+
     private static ItemStack createGTTool(int toolId) {
         if (!Loader.isModLoaded("gregtech")) return null;
         try {
@@ -70,7 +81,9 @@ public class ToolIcons {
                 .get(null);
             Method getToolWithStats = toolClass
                 .getMethod("getToolWithStats", int.class, int.class, materialsClass, materialsClass, long[].class);
-            return (ItemStack) getToolWithStats.invoke(instance, toolId, 1, steel, steel, null);
+            ItemStack stack = (ItemStack) getToolWithStats.invoke(instance, toolId, 1, steel, steel, null);
+            if (stack != null) setZeroDurability(stack);
+            return stack;
         } catch (ReflectiveOperationException | RuntimeException e) {
             WailaCompact.LOG.warn("Could not create the GregTech tool icon with id " + toolId, e);
             return null;
