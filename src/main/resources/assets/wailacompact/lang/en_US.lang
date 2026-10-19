@@ -1,2 +1,3 @@
 option.wailacompact.harvesticons=Harvest tool icons (replaces Harvestability text)
 option.wailacompact.hideidleprogress=Hide the progress bar of idle machines
+option.wailacompact.compactrecipe=Compact recipe line for GregTech machines

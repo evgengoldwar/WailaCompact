@@ -11,10 +11,10 @@ public enum Mixins implements IMixins {
     HIDE_HARVESTABILITY_TEXT(new MixinBuilder().setPhase(Phase.LATE)
         .addRequiredMod(TargetMods.WAILA_HARVESTABILITY)
         .addClientMixins("MixinWailaHandler_HideText")),
-    // Hides the "0t / 0t" progress bar of machines that aren't working
-    HIDE_IDLE_PROGRESS(new MixinBuilder().setPhase(Phase.LATE)
+    // Hides the "0t / 0t" progress bar of idle machines, compacts the recipe of GregTech machines
+    TOOLTIP_POST_PROCESSING(new MixinBuilder().setPhase(Phase.LATE)
         .addRequiredMod(TargetMods.WAILA)
-        .addClientMixins("MixinMetaDataProvider_HideIdleProgress"));
+        .addClientMixins("MixinMetaDataProvider_Body"));
 
     private final MixinBuilder builder;
 
