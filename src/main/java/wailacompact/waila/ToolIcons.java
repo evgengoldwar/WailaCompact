@@ -1,6 +1,5 @@
 package wailacompact.waila;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +19,6 @@ public class ToolIcons {
     // Tool class -> GregTech MetaGeneratedTool01 tool id (see gregtech.common.items.IDMetaTool01)
     private static final Map<String, Integer> GREGTECH = new HashMap<>();
     private static final Map<String, ItemStack> CACHE = new HashMap<>();
-    private static boolean gtProxyFailed = false;
 
     static {
         VANILLA.put("pickaxe", new ItemStack(Items.iron_pickaxe));
@@ -58,58 +56,6 @@ public class ToolIcons {
 
         CACHE.put(toolClass, stack);
         return stack;
-    }
-
-    /**
-     * GregTech draws the durability and charge bars as part of the tool icon. Turns them off (GTMod.proxy
-     * mRenderItemDurabilityBar / mRenderItemChargeBar) while an icon is rendered.
-     *
-     * @return the previous values to pass to {@link #restoreGTBars}, or null if there was nothing to change
-     */
-    public static boolean[] hideGTBars() {
-        Object proxy = getGTProxy();
-        if (proxy == null) return null;
-        try {
-            Field durability = proxy.getClass()
-                .getField("mRenderItemDurabilityBar");
-            Field charge = proxy.getClass()
-                .getField("mRenderItemChargeBar");
-            boolean[] previous = { durability.getBoolean(proxy), charge.getBoolean(proxy) };
-            durability.setBoolean(proxy, false);
-            charge.setBoolean(proxy, false);
-            return previous;
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            gtProxyFailed = true;
-            return null;
-        }
-    }
-
-    public static void restoreGTBars(boolean[] previous) {
-        if (previous == null) return;
-        Object proxy = getGTProxy();
-        if (proxy == null) return;
-        try {
-            proxy.getClass()
-                .getField("mRenderItemDurabilityBar")
-                .setBoolean(proxy, previous[0]);
-            proxy.getClass()
-                .getField("mRenderItemChargeBar")
-                .setBoolean(proxy, previous[1]);
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            gtProxyFailed = true;
-        }
-    }
-
-    private static Object getGTProxy() {
-        if (gtProxyFailed || !Loader.isModLoaded("gregtech")) return null;
-        try {
-            return Class.forName("gregtech.GTMod")
-                .getField("proxy")
-                .get(null);
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            gtProxyFailed = true;
-            return null;
-        }
     }
 
     private static ItemStack createGTTool(int toolId) {
