@@ -19,7 +19,8 @@ import mcp.mobius.waila.api.SpecialChars;
  * Replaces the recipe item lists of GregTech machines by one line of icons:
  * <ul>
  * <li>single blocks: {@code [inputs] → [what is being crafted] | [what is in the output slots]}</li>
- * <li>multiblocks: {@code → [what is being crafted]} (multiblocks don't keep the inputs of the running recipe)</li>
+ * <li>multiblocks: {@code [recipe inputs × parallels] → [what is being crafted]} (the inputs need our mod on the
+ * server)</li>
  * </ul>
  */
 public class GTRecipeLine {
@@ -86,7 +87,21 @@ public class GTRecipeLine {
         }
         if (outputs.isEmpty()) return;
 
-        StringBuilder line = new StringBuilder(RecipeStackRenderer.text("\u2192", TEXT_COLOR));
+        // Sent by GTRecipeNBTProvider when our mod is on the server
+        List<String> inputs = new ArrayList<>();
+        readItems(tag, GTRecipeNBTProvider.TAG_RECIPE_INPUT_ITEM, GTRecipeNBTProvider.TAG_AMOUNT, inputs);
+        for (int i = 0; i < 64; i++) {
+            String key = GTRecipeNBTProvider.TAG_RECIPE_INPUT_FLUID + i;
+            if (!tag.hasKey(key)) continue;
+            NBTTagCompound fluidTag = tag.getCompoundTag(key);
+            FluidStack fluid = FluidStack.loadFluidStackFromNBT(fluidTag);
+            if (fluid == null || fluid.getFluid() == null) continue;
+            inputs.add(RecipeStackRenderer.fluid(fluid.getFluid(), fluidTag.getLong(GTRecipeNBTProvider.TAG_AMOUNT)));
+        }
+
+        StringBuilder line = new StringBuilder();
+        append(line, inputs, MAX_INPUTS);
+        line.append(RecipeStackRenderer.text("\u2192", TEXT_COLOR));
         append(line, outputs, MAX_MULTI_OUTPUTS);
 
         if (insertAt < 0) {
@@ -216,8 +231,7 @@ public class GTRecipeLine {
             NBTTagCompound itemTag = tag.getCompoundTag(prefix + i);
             ItemStack stack = ItemStack.loadItemStackFromNBT(itemTag);
             if (stack == null || stack.getItem() == null) continue;
-            long amount = amountKey != null && itemTag.hasKey(amountKey) ? itemTag.getInteger(amountKey)
-                : stack.stackSize;
+            long amount = amountKey != null && itemTag.hasKey(amountKey) ? itemTag.getLong(amountKey) : stack.stackSize;
             if (amount <= 0) amount = 1;
 
             // Merge the same item spread over several slots
