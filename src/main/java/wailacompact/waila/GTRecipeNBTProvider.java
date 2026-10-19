@@ -75,7 +75,7 @@ public class GTRecipeNBTProvider implements IWailaDataProvider {
         } catch (ReflectiveOperationException | RuntimeException ignored) {}
 
         Object items = getPublicField(recipe, "mInputs");
-        if (items instanceof ItemStack[] stacks) {
+        if (items instanceof ItemStack[]stacks) {
             int index = 0;
             for (ItemStack stack : stacks) {
                 if (stack == null || stack.getItem() == null) continue;
@@ -89,7 +89,7 @@ public class GTRecipeNBTProvider implements IWailaDataProvider {
         }
 
         Object fluids = getPublicField(recipe, "mFluidInputs");
-        if (fluids instanceof FluidStack[] fluidStacks) {
+        if (fluids instanceof FluidStack[]fluidStacks) {
             int index = 0;
             for (FluidStack fluidStack : fluidStacks) {
                 if (fluidStack == null || fluidStack.getFluid() == null) continue;
