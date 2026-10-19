@@ -35,9 +35,7 @@
  */
 dependencies {
     compileOnly("com.github.GTNewHorizons:waila:1.19.34:dev") { transitive = false }
-    compileOnly("com.github.GTNewHorizons:WailaHarvestability:1.1.12:dev") { transitive = false }
 
     // For runClient
     runtimeOnlyNonPublishable("com.github.GTNewHorizons:waila:1.19.34:dev")
-    runtimeOnlyNonPublishable("com.github.GTNewHorizons:WailaHarvestability:1.1.12:dev") { transitive = false }
 }
