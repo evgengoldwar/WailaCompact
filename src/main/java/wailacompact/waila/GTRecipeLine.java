@@ -60,9 +60,8 @@ public class GTRecipeLine {
                 .equals(lockedRecipe)) insertAt++;
             while (insertAt < lines.size()) {
                 String line = lines.get(insertAt);
-                boolean isEntry = line.startsWith(MULTI_STACK_LINE_PREFIX)
-                    || (!andMorePrefix.trim()
-                        .isEmpty() && line.startsWith(andMorePrefix));
+                boolean isEntry = line.startsWith(MULTI_STACK_LINE_PREFIX) || (!andMorePrefix.trim()
+                    .isEmpty() && line.startsWith(andMorePrefix));
                 if (!isEntry) break;
                 lines.remove(insertAt);
             }
