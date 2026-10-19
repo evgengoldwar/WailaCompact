@@ -7,9 +7,11 @@ import javax.annotation.Nonnull;
 
 public enum Mixins implements IMixins {
 
-    EXAMPLE(new MixinBuilder()
-        .setPhase(Phase.EARLY)
-        .addClientMixins("MixinMinecraft_Example"));
+    // Hides the text lines added by WailaHarvestability, they are replaced by the harvest icons
+    HIDE_HARVESTABILITY_TEXT(new MixinBuilder()
+        .setPhase(Phase.LATE)
+        .addRequiredMod(TargetMods.WAILA_HARVESTABILITY)
+        .addClientMixins("MixinWailaHandler_HideText"));
 
     private final MixinBuilder builder;
 

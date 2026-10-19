@@ -7,13 +7,12 @@ import javax.annotation.Nonnull;
 
 public enum TargetMods implements ITargetMod {
 
-    COFHCORE("cofh.asm.LoadingPlugin", "CoFHCore"),
-    OPTIFINE("optifine.OptiFineForgeTweaker", "Optifine");
+    WAILA_HARVESTABILITY("WailaHarvestability");
 
     private final TargetModBuilder builder;
 
-    TargetMods(String coreModClass, String modId) {
-        this.builder = new TargetModBuilder().setCoreModClass(coreModClass).setModId(modId);
+    TargetMods(String modId) {
+        this.builder = new TargetModBuilder().setModId(modId);
     }
 
     @Nonnull
