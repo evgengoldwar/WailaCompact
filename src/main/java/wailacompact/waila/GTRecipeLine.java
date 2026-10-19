@@ -6,13 +6,18 @@ import java.util.List;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.StatCollector;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 
 import mcp.mobius.waila.api.SpecialChars;
 
 /**
- * Replaces the "Input:" / "Output:" item lists of GregTech single block machines by one line of icons:
- * {@code [inputs] → [what is being crafted] | [what is in the output slots]}.
+ * Replaces the recipe item lists of GregTech machines by one line of icons:
+ * <ul>
+ * <li>single blocks: {@code [inputs] → [what is being crafted] | [what is in the output slots]}</li>
+ * <li>multiblocks: {@code → [what is being crafted]} (multiblocks don't keep the inputs of the running recipe)</li>
+ * </ul>
  */
 public class GTRecipeLine {
 
@@ -21,17 +26,82 @@ public class GTRecipeLine {
     private static final int MAX_INPUTS = 6;
     private static final int MAX_OUTPUTS = 4;
     private static final int MAX_BUFFER = 3;
+    private static final int MAX_MULTI_OUTPUTS = 6;
     private static final int TEXT_COLOR = 0xFFFFFF;
     private static final int GRAY = 0xAAAAAA;
     // ForgeDirection ordinals: DOWN, UP, NORTH, SOUTH, WEST, EAST
     private static final String[] SIDES = { "↓", "↑", "N", "S", "W", "E" };
 
     private static final String STACK_LINE_PREFIX = SpecialChars.RENDER + "{waila.stack";
+    private static final String MULTI_STACK_LINE_PREFIX = "  " + STACK_LINE_PREFIX;
+    private static final String BAR_LINE_PREFIX = SpecialChars.RENDER + "{waila.bar";
+    private static final String GT_BAR_LINE_PREFIX = SpecialChars.RENDER + "{waila.gt.progress";
 
     public static void compact(List<String> lines, NBTTagCompound tag) {
+        if (tag == null) return;
         // Only GregTech single block machines (MTEBasicMachine) send this
-        if (tag == null || !tag.hasKey("outputFacingSingleBlock")) return;
+        if (tag.hasKey("outputFacingSingleBlock")) {
+            compactSingleBlock(lines, tag);
+        } else if (tag.hasKey("incompleteStructure") && tag.hasKey("maxProgress")) {
+            // MTEMultiBlockBase and its subclasses (also gt++ steam multiblocks, TecTech...)
+            compactMultiBlock(lines, tag);
+        }
+    }
 
+    private static void compactMultiBlock(List<String> lines, NBTTagCompound tag) {
+        String producingHeader = StatCollector.translateToLocal("GT5U.waila.producing");
+        String lockedRecipe = StatCollector.translateToLocal("GT5U.waila.multiblock.status.locked_recipe");
+        String andMorePrefix = formatPrefix("GT5U.waila.producing.andmore");
+
+        int insertAt = lines.indexOf(producingHeader);
+        if (insertAt >= 0) {
+            lines.remove(insertAt);
+            if (insertAt < lines.size() && lines.get(insertAt)
+                .equals(lockedRecipe)) insertAt++;
+            while (insertAt < lines.size()) {
+                String line = lines.get(insertAt);
+                boolean isEntry = line.startsWith(MULTI_STACK_LINE_PREFIX)
+                    || (!andMorePrefix.trim()
+                        .isEmpty() && line.startsWith(andMorePrefix));
+                if (!isEntry) break;
+                lines.remove(insertAt);
+            }
+        }
+
+        if (!tag.getBoolean("isActive")) return;
+        List<String> outputs = new ArrayList<>();
+        int itemCount = tag.getInteger("outputItemLength");
+        for (int i = 0; i < itemCount; i++) {
+            ItemStack stack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("outputItemStack" + i));
+            if (stack == null || stack.getItem() == null) continue;
+            outputs.add(RecipeStackRenderer.item(stack, Math.max(1, tag.getInteger("outputItemCount" + i))));
+        }
+        int fluidCount = tag.getInteger("outputFluidLength");
+        for (int i = 0; i < fluidCount; i++) {
+            Fluid fluid = FluidRegistry.getFluid(tag.getString("outputFluidName" + i));
+            if (fluid == null) continue;
+            outputs.add(RecipeStackRenderer.fluid(fluid, tag.getInteger("outputFluidCount" + i)));
+        }
+        if (outputs.isEmpty()) return;
+
+        StringBuilder line = new StringBuilder(RecipeStackRenderer.text("\u2192", TEXT_COLOR));
+        append(line, outputs, MAX_MULTI_OUTPUTS);
+
+        if (insertAt < 0) {
+            // Multiblocks that don't list their outputs (e.g. gt++ steam multiblocks): put it after the progress bar
+            insertAt = lines.size();
+            for (int i = 0; i < lines.size(); i++) {
+                String l = lines.get(i);
+                if (l.startsWith(BAR_LINE_PREFIX) || l.startsWith(GT_BAR_LINE_PREFIX)) {
+                    insertAt = i + 1;
+                    break;
+                }
+            }
+        }
+        lines.add(insertAt, line.toString());
+    }
+
+    private static void compactSingleBlock(List<String> lines, NBTTagCompound tag) {
         String inputHeader = StatCollector.translateToLocal("GT5U.waila.machine.input");
         String outputPrefix = formatPrefix("GT5U.waila.machine.output");
         String moreItemsPrefix = formatPrefix("GT5U.waila.machine.more_items");
