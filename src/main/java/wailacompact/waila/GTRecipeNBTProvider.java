@@ -33,7 +33,7 @@ public class GTRecipeNBTProvider implements IWailaDataProvider {
         if (mte == null) return tag;
 
         Object items = getPublicField(mte, "mOutputItems");
-        if (items instanceof ItemStack[] stacks) {
+        if (items instanceof ItemStack[]stacks) {
             for (int i = 0; i < stacks.length; i++) {
                 if (stacks[i] == null) continue;
                 NBTTagCompound itemTag = new NBTTagCompound();
