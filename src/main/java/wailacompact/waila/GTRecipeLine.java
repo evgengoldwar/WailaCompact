@@ -2,10 +2,13 @@ package wailacompact.waila;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
@@ -104,12 +107,20 @@ public class GTRecipeLine {
         String inputHeader = StatCollector.translateToLocal("GT5U.waila.machine.input");
         String outputPrefix = formatPrefix("GT5U.waila.machine.output");
         String moreItemsPrefix = formatPrefix("GT5U.waila.machine.more_items");
+        String facingLine = StatCollector
+            .translateToLocalFormatted("GT5U.waila.facing", facingName(tag.getInteger("mainFacingSingleBlock")));
+        int outputFacing = tag.getInteger("outputFacingSingleBlock");
 
+        // The header texts differ between GregTech versions and resource packs, so a header is also recognized by
+        // being followed by item lines (input) or by ending with the output side name (output)
         int insertAt = -1;
         int i = 0;
         while (i < lines.size()) {
             String line = lines.get(i);
-            boolean isHeader = line.equals(inputHeader) || (!outputPrefix.isEmpty() && line.startsWith(outputPrefix));
+            boolean isHeader = !isStackLine(line) && !line.equals(facingLine)
+                && (line.equals(inputHeader) || (!outputPrefix.isEmpty() && line.startsWith(outputPrefix))
+                    || (i + 1 < lines.size() && isStackLine(lines.get(i + 1)) && !line.startsWith(SpecialChars.RENDER))
+                    || endsWithFacing(line, outputFacing));
             if (!isHeader) {
                 i++;
                 continue;
@@ -122,6 +133,38 @@ public class GTRecipeLine {
         if (insertAt < 0) return;
 
         lines.add(insertAt, buildLine(tag));
+    }
+
+    private static boolean isStackLine(String line) {
+        return line.trim()
+            .startsWith(STACK_LINE_PREFIX);
+    }
+
+    private static boolean endsWithFacing(String line, int facing) {
+        String text = EnumChatFormatting.getTextWithoutFormattingCodes(line);
+        if (text == null) return false;
+        text = text.trim()
+            .toLowerCase(Locale.ROOT);
+        String name = facingName(facing).trim()
+            .toLowerCase(Locale.ROOT);
+        String direction = ForgeDirection.getOrientation(facing)
+            .name()
+            .toLowerCase(Locale.ROOT);
+        return endsWithWord(text, name) || endsWithWord(text, direction);
+    }
+
+    private static boolean endsWithWord(String text, String word) {
+        if (word.isEmpty() || !text.endsWith(word)) return false;
+        int before = text.length() - word.length() - 1;
+        return before < 0 || !Character.isLetter(text.charAt(before));
+    }
+
+    private static String facingName(int facing) {
+        String direction = ForgeDirection.getOrientation(facing)
+            .name()
+            .toLowerCase(Locale.ROOT);
+        String key = "GT5U.waila.facing." + direction;
+        return StatCollector.canTranslate(key) ? StatCollector.translateToLocal(key) : direction;
     }
 
     private static String buildLine(NBTTagCompound tag) {
@@ -206,7 +249,7 @@ public class GTRecipeLine {
     }
 
     private static boolean isListEntry(String line, String moreItemsPrefix) {
-        return line.startsWith(STACK_LINE_PREFIX) || (!moreItemsPrefix.isEmpty() && line.startsWith(moreItemsPrefix));
+        return isStackLine(line) || (!moreItemsPrefix.isEmpty() && line.startsWith(moreItemsPrefix));
     }
 
     /**
