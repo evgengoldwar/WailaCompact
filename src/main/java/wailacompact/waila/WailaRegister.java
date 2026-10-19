@@ -10,6 +10,8 @@ public class WailaRegister {
     public static void register(IWailaRegistrar registrar) {
         String key = HarvestIconsProvider.CONFIG_KEY;
         registrar.addConfig("WailaCompact", key, "option." + key, true);
+        String idleKey = IdleProgressFilter.CONFIG_KEY;
+        registrar.addConfig("WailaCompact", idleKey, "option." + idleKey, true);
         registrar.registerHeadProvider(new HarvestIconsProvider(), Block.class);
         registrar.registerTooltipRenderer(HarvestIconsRenderer.NAME, new HarvestIconsRenderer());
     }

@@ -7,6 +7,7 @@ import com.gtnewhorizon.gtnhmixins.builders.TargetModBuilder;
 
 public enum TargetMods implements ITargetMod {
 
+    WAILA("Waila"),
     WAILA_HARVESTABILITY("WailaHarvestability");
 
     private final TargetModBuilder builder;
