@@ -16,8 +16,8 @@ import mcp.mobius.waila.api.IWailaVariableWidthTooltipRenderer;
 import mcp.mobius.waila.api.SpecialChars;
 
 /**
- * Draws a small tool icon followed by a green check mark (the held item can harvest the block) or a red cross, aligned
- * to the right edge of the tooltip.
+ * Draws a small tool icon with a green check mark (the held item can harvest the block) or a red cross in its bottom
+ * right corner, aligned to the right edge of the tooltip.
  * <p>
  * Params: [0] width of the text before this renderer on its line, [1] tool class, [2] "1" if harvestable
  */
@@ -33,6 +33,8 @@ public class HarvestIconsRenderer implements IWailaVariableWidthTooltipRenderer 
     private static final int GAP = 6; // Minimum space between the block name and the icons
     private static final int ICON_SIZE = 10;
     private static final float ICON_SCALE = ICON_SIZE / 16.0F;
+    private static final float MARK_SCALE = 0.6F;
+    private static final int MARK_OVERHANG = 2; // How far the mark sticks out of the icon to the right and bottom
 
     private static final RenderItem renderItem = new RenderItem();
 
@@ -83,12 +85,16 @@ public class HarvestIconsRenderer implements IWailaVariableWidthTooltipRenderer 
             font.drawStringWithShadow(letter, x + (ICON_SIZE - font.getStringWidth(letter)) / 2, 0, 0xFFFFFF);
         }
 
+        // Small mark over the bottom right corner of the icon
+        String mark = canHarvest ? CHECK : CROSS;
+        float markX = x + ICON_SIZE + MARK_OVERHANG - font.getStringWidth(mark) * MARK_SCALE;
+        float markY = -1 + ICON_SIZE + MARK_OVERHANG - font.FONT_HEIGHT * MARK_SCALE;
+        GL11.glPushMatrix();
+        GL11.glTranslatef(markX, markY, 0);
+        GL11.glScalef(MARK_SCALE, MARK_SCALE, 1.0F);
         GL11.glEnable(GL11.GL_TEXTURE_2D);
-        font.drawStringWithShadow(
-            canHarvest ? CHECK : CROSS,
-            x + ICON_SIZE + 1,
-            0,
-            canHarvest ? CHECK_COLOR : CROSS_COLOR);
+        font.drawStringWithShadow(mark, 0, 0, canHarvest ? CHECK_COLOR : CROSS_COLOR);
+        GL11.glPopMatrix();
     }
 
     @Override
@@ -102,8 +108,7 @@ public class HarvestIconsRenderer implements IWailaVariableWidthTooltipRenderer 
     }
 
     private static int getIconsWidth() {
-        FontRenderer font = Minecraft.getMinecraft().fontRenderer;
-        return ICON_SIZE + 1 + Math.max(font.getStringWidth(CHECK), font.getStringWidth(CROSS));
+        return ICON_SIZE + MARK_OVERHANG;
     }
 
     private static int parseInt(String s) {
